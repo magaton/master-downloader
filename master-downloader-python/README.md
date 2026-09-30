@@ -132,3 +132,19 @@ Use `--delay 0` to measure raw throughput. The test server is plain Python, so o
   high concurrency against a site you don't own can look like a denial-of-service attack.
 * If one site runs out of pages early, its core sits idle (by design: one process per domain).
 * Duplicate detection is URL-based. The same page under two different URLs (e.g. `/` and `/index.html`) counts twice.
+
+## Where this sits against other implementations
+
+The score is how many HTML pages finish inside the window. The machine has 4 cores, there are 4 domains, and every page is treated as the same size. This program, the [Go crawler](../master-downloader-go/README.md), and the alternatives below can all do the rest: HTML only, each URL once, a configured window, no new download after it closes, in-flight pages finish, and the per-page report plus the average. See the [repo README](../README.md) for how to run both.
+
+**Go is the better fit.** This crawler runs one process per domain and, on Linux, pins that process to one core. All 4 cores stay busy while all 4 domains still have pages. When one domain runs out of pages, its core sits idle until the window ends, and the other domains cannot use it. The Go crawler is one process with `GOMAXPROCS` at 4, so any domain can run on any of those cores. Each domain keeps its own request cap. A finished domain does not hand that cap over. It hands over the core time, and the domains that still have pages use all 4 cores for the rest of the window. The same-size assumption is why that is enough: there is no large page to avoid and no small page to prefer.
+
+On the local test both saved 816 pages, started nothing after the deadline, and finished 256 pages that were already downloading. Every page was delayed by 2 seconds, so both were waiting on the server. That run checks the graceful stop. It does not rank them on page count. Go pulls ahead when a domain runs out of pages before the window ends, or when pages return quickly enough that Scrapy's link parsing under the GIL shows up in the page count. That parsing is why this program needed a process per core.
+
+**Node would not beat Go, and it is not a clear step up from this program.** One event loop can download from all 4 domains without pinning a core to each. Link extraction still runs on the one JavaScript thread, so a slow parse stalls every domain at once. Worker threads or `cluster` get the other cores back by splitting the domains across processes again, which brings the idle core back. Crawlee is a real crawler library. The time window would still be custom, as it is here and in the Go crawler.
+
+**Rust is not better than Go for this requirement.** It uses all 4 cores in one process, and it does less work per page, so it can save somewhat more when sites answer quickly and link extraction fills the window. That does not change the graceful stop or the 4-core schedule. On the 2-second local test it would tie. The gap is not large enough to replace the Go crawler. `tokio` with `reqwest`, or the `spider` crate, would be the library path.
+
+**Java 21, Kotlin, and C# beat this program and lose to Go.** They also run all 4 domains in one process, so a finished domain does not leave a core idle. `crawler4j` on the JVM, or `HttpClient` plus an HTML parser in C#, covers the existing-library requirement. Their runtimes take longer to warm up, and that time comes out of a short window. After warmup they still do more work per page than Go.
+
+Elixir and Ruby stay in this program's class: many downloads at once, slower HTML parsing, and no extra cores working on links.
