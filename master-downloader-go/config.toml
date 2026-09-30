@@ -1,0 +1,35 @@
+# master-downloader-go configuration.
+# Every value can also be overridden on the command line (see README).
+
+# How long new downloads may be started, in seconds. When time is up no new
+# download starts; downloads already in flight finish normally.
+duration_seconds = 60
+
+# The 4 websites to crawl. Use a start URL or a bare domain
+# (a bare domain becomes https://<domain>/).
+domains = [
+    "https://books.toscrape.com/",
+    "https://quotes.toscrape.com/",
+    "https://web-scraping.dev/",
+    "https://webscraper.io/test-sites",
+]
+
+# Where downloaded pages and reports are written.
+output_dir = "output"
+
+# Parallel HTTP requests per domain. This is the main throughput knob.
+concurrency_per_domain = 64
+
+# Seconds before a single request is abandoned.
+download_timeout = 15
+
+# Respect robots.txt. Set false only on sites you are allowed to crawl freely.
+obey_robots = true
+
+# Also follow links to subdomains (forum.example.com, shop.example.com, ...).
+# Off by default: only example.com and www.example.com are crawled.
+include_subdomains = false
+
+# Cap GOMAXPROCS at one thread per domain (and at the machine's CPU count).
+# Go still schedules the crawl across those threads; this is not a per-core pin.
+pin_cpu = true
