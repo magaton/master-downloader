@@ -1,0 +1,16 @@
+# Local test setup: 4 sites served by tools/test_server.py
+#   terminal 1: uv run python tools/test_server.py --delay 2
+#   terminal 2: uv run master-downloader-python -c config.local.toml
+duration_seconds = 10
+domains = [
+    "http://127.0.0.1:8001/",
+    "http://127.0.0.1:8002/",
+    "http://127.0.0.1:8003/",
+    "http://127.0.0.1:8004/",
+]
+output_dir = "output"
+concurrency_per_domain = 64
+download_timeout = 15
+obey_robots = true
+include_subdomains = false
+pin_cpu = true

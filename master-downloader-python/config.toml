@@ -1,0 +1,37 @@
+# master-downloader-python configuration
+# Every value can also be overridden on the command line (see `uv run master-downloader-python --help`).
+
+# How long new downloads may be started, in seconds. When time is up no new
+# download starts; downloads already in flight finish normally.
+duration_seconds = 60
+
+# The 4 websites to crawl. Use a start URL or a bare domain
+# (a bare domain becomes https://<domain>/). One crawler process runs per domain.
+domains = [
+    "https://books.toscrape.com/",
+    "https://quotes.toscrape.com/",
+    "https://web-scraping.dev/",
+    "https://webscraper.io/test-sites",
+]
+
+# Where downloaded pages and reports are written.
+output_dir = "output"
+
+# Parallel HTTP requests per domain (= per process). This is the main
+# throughput knob; raise it until the target server or your bandwidth saturates.
+concurrency_per_domain = 64
+
+# Seconds before a single request is abandoned. Slow outliers hold a slot
+# that could download other pages, so keep this short.
+download_timeout = 15
+
+# Respect robots.txt. Setting this to false saves one request per domain and
+# never blocks URLs, but only do it on sites you are allowed to crawl freely.
+obey_robots = true
+
+# Also follow links to subdomains (forum.example.com, shop.example.com, ...).
+# Off by default: only example.com and www.example.com are crawled.
+include_subdomains = false
+
+# Pin each crawler process to its own CPU core (Linux only; ignored elsewhere).
+pin_cpu = true
